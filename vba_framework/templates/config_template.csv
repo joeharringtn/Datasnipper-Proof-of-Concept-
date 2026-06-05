@@ -1,0 +1,14 @@
+Key,Value,DataType,Scope,Description,Required
+EngagementID,,String,Global,Unique engagement identifier,Yes
+EngagementType,,String,Global,Audit area type (Cash/A/R/A/P/Contracts),Yes
+PeriodStartDate,,Date,Global,Start date for the engagement,Yes
+PeriodEndDate,,Date,Global,End date for the engagement,Yes
+LeadAuditor,,String,Global,Primary audit lead,Yes
+ClientName,,String,Global,Client name,Yes
+ClientContact,,String,Global,Client contact name,No
+FrameworkVersion,,String,Global,Version of the VBA framework,No
+WorkflowType,,String,Global,Approval workflow type (Simple/Multi-level),No
+Level1Approver,,String,Global,Primary approver name,No
+Level1Email,,String,Global,Primary approver email,No
+Level2Approver,,String,Global,Secondary approver name,No
+Level2Email,,String,Global,Secondary approver email,No

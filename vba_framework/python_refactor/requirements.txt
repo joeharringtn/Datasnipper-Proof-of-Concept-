@@ -1,0 +1,13 @@
+openpyxl
+pydantic
+click
+python-dateutil
+pytz
+
+# Dev dependencies
+pytest
+pytest-cov
+black
+isort
+pylint
+mypy

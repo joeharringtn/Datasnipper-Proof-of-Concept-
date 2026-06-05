@@ -1,0 +1,616 @@
+# VBA MODULE SPECIFICATIONS (NO CODE YET)
+
+## Module Files Overview
+
+This document describes the structure and responsibilities of each VBA module file (.bas). These are specifications ONLY - no code is written yet.
+
+---
+
+## Module 1: Main.bas
+
+### Purpose
+Central orchestration module; user interface entry points; workflow state management.
+
+### Responsibilities
+
+#### User Interface Entry Points (Macros)
+```
+Public Sub LoadEngagement()
+  Purpose: Initialize engagement; load configuration
+  Inputs: User selects from CONFIG sheet
+  Outputs: CONFIG_LOADED state; display message
+  Calls: ConfigManager.LoadConfig()
+  Error Handling: Validate config completeness; show errors
+
+Public Sub BuildTags()
+  Purpose: Generate DataSnipper tags
+  Inputs: TAG_ENGINE definitions
+  Outputs: TAG_ENGINE.SourceTag column populated
+  Calls: ConfigManager.GetTagDefinitions(), TagBuilder.BuildTags()
+  Error Handling: Validate tag syntax; show errors
+
+Public Sub ValidateInput()
+  Purpose: Validate raw DataSnipper extractions
+  Inputs: EXTRACTION_INPUT sheet data
+  Outputs: VALIDATION sheet populated
+  Calls: Validator.ValidateInputComplete(), Validator.GenerateValidationReport()
+  Error Handling: Show validation errors; allow retry
+
+Public Sub ProcessExtraction()
+  Purpose: Transform data and apply QA rules
+  Inputs: EXTRACTION_INPUT validated data
+  Outputs: QA sheet with exceptions
+  Calls: DataMapper.MapRawToSchema(), QAEngine.ApplyQARules()
+  Error Handling: Log transformation errors; flag for review
+
+Public Sub ReviewExceptions()
+  Purpose: Guide user through QA exception review
+  Inputs: QA sheet exceptions
+  Outputs: QA sheet decisions populated
+  Calls: (Interactive; user enters decisions)
+  Error Handling: Ensure all decisions completed before approval
+
+Public Sub ApproveOutput()
+  Purpose: Final approval and OUTPUT sheet generation
+  Inputs: QA sheet with all decisions
+  Outputs: OUTPUT sheet locked; approval recorded
+  Calls: Main.VerifyApprovalRequirements(), AuditLog.RecordSignOff()
+  Error Handling: Block if approval requirements not met
+
+Public Sub ExportResults()
+  Purpose: Export final OUTPUT sheet
+  Inputs: OUTPUT sheet
+  Outputs: CSV + XLSX files
+  Calls: (Write to file)
+  Error Handling: Handle file write errors
+
+Public Sub GenerateReport()
+  Purpose: Create audit compliance report
+  Inputs: AUDIT_LOG sheet
+  Outputs: PDF or Excel report
+  Calls: AuditLog.GenerateAuditTrail()
+  Error Handling: Handle file generation errors
+```
+
+#### Workflow State Management
+```
+Enum WorkflowState
+  IDLE
+  CONFIG_LOADED
+  TAGS_READY
+  EXTRACTION_SUBMITTED
+  VALIDATION_COMPLETE
+  QA_IN_PROGRESS
+  QA_REVIEWED
+  COMPLETE
+  ARCHIVED
+End Enum
+
+Public Function GetCurrentState() As WorkflowState
+  [Returns current workflow state]
+
+Private Sub ValidateStateTransition(fromState, toState)
+  [Ensures valid state transitions; blocks invalid moves]
+```
+
+#### Error Handling
+```
+Private Sub HandleError(moduleName, functionName, errorCode, errorMsg)
+  Purpose: Central error handler
+  Responsibility:
+    ├─ Log error to AUDIT_LOG
+    ├─ Show user-friendly error message
+    ├─ Allow retry or proceed to next step
+    └─ Prevent unhandled exceptions
+
+Private Function CanProceed(requiredState) As Boolean
+  Purpose: Check if workflow state allows proceeding
+```
+
+---
+
+## Module 2: ConfigManager.bas
+
+### Purpose
+Load, validate, and manage engagement configuration.
+
+### Responsibilities
+
+#### Configuration Loading
+```
+Public Function LoadConfig() As ConfigObject
+  Inputs: CONFIG sheet
+  Outputs: ConfigObject (in-memory structure)
+  Responsibility:
+    ├─ Read all CONFIG sheet values
+    ├─ Validate completeness
+    ├─ Create in-memory object
+    └─ Return ConfigObject or error code
+
+Public Sub ValidateConfig(config As ConfigObject) As ValidationResult()
+  Inputs: ConfigObject
+  Outputs: Array of validation errors (if any)
+  Checks:
+    ├─ All required fields populated
+    ├─ Dates chronologically valid
+    ├─ Document paths exist
+    ├─ Approver emails valid format
+    └─ Data types correct
+```
+
+#### Configuration Exposure (for other modules)
+```
+Public Function GetEngagementType() As String
+  Returns: "Cash" | "AR" | "AP" | "Contracts" | "Inventory"
+
+Public Function GetDocSpecs() As DocumentSpec()
+  Returns: Array of DocumentSpec objects (file path, page count, etc)
+
+Public Function GetTagDefinitions() As TagDefinition()
+  Returns: Array of TagDefinition objects (extraction rules)
+
+Public Function GetQARules() As QARule()
+  Returns: Array of QARule objects (validation rules)
+
+Public Function GetOutputSchema() As SchemaField()
+  Returns: Array of SchemaField objects (required output fields)
+
+Public Function GetApprovalWorkflow() As ApprovalWorkflow
+  Returns: ApprovalWorkflow object (approver names, levels, etc)
+```
+
+#### Data Structure Definitions (for this module)
+```
+Type ConfigObject
+  engagement_id As String
+  engagement_type As String
+  period_start_date As Date
+  period_end_date As Date
+  lead_auditor As String
+  client_name As String
+  documents() As DocumentSpec
+  tags() As TagDefinition
+  qa_rules() As QARule
+  output_schema() As SchemaField
+  approval_workflow As ApprovalWorkflow
+End Type
+
+Type DocumentSpec
+  doc_id As String
+  file_path As String
+  page_count As Integer
+  doc_type As String
+  extraction_method As String
+End Type
+
+Type TagDefinition
+  tag_id As String
+  field_name As String
+  extraction_method As String
+  source_document As String
+  [plus DS_SEARCH or DS_COORDS specific fields]
+End Type
+
+Type QARule
+  rule_id As String
+  rule_name As String
+  field_name As String
+  rule_type As String (RANGE, LOOKUP, FORMAT, CROSS_FIELD, DUPLICATE, CUSTOM)
+  rule_definition As String
+  fail_action As String (FLAG, BLOCK, WARN)
+End Type
+
+Type SchemaField
+  field_name As String
+  data_type As String
+  required As Boolean
+  format_spec As String
+End Type
+
+Type ApprovalWorkflow
+  workflow_type As String (SIMPLE, MULTI_LEVEL, NONE)
+  level1_approver As String
+  level2_approver As String (optional)
+  [etc]
+End Type
+```
+
+---
+
+## Module 3: TagBuilder.bas
+
+### Purpose
+Generate DataSnipper tag syntax; validate tag format.
+
+### Responsibilities
+
+#### Tag Generation
+```
+Public Function BuildTags(tagDefinitions() As TagDefinition) As String()
+  Inputs: Array of TagDefinition objects
+  Outputs: Array of complete tag strings (DS_SEARCH or DS_COORDS format)
+  Process:
+    FOR each TagDefinition:
+      IF extraction_method = "DS_SEARCH":
+        Call BuildSearchTag() → returns tag string
+      ELSE IF extraction_method = "DS_COORDS":
+        Call BuildCoordTag() → returns tag string
+      ENDIF
+      Store in output array
+    ENDFOR
+  Returns: Array of tag strings
+
+Public Function BuildSearchTag(tagDef As TagDefinition) As String
+  Inputs: TagDefinition with DS_SEARCH parameters
+  Outputs: Formatted DS_SEARCH tag string
+  Format: DS_SEARCH:<field_id>:<output_field>:(parameters)
+  Responsibility:
+    ├─ Build parameter string (start=, end=, type=, etc)
+    ├─ Validate syntax
+    ├─ Return formatted tag or error
+
+Public Function BuildCoordTag(tagDef As TagDefinition) As String
+  Inputs: TagDefinition with DS_COORDS parameters
+  Outputs: Formatted DS_COORDS tag string
+  Format: DS_COORDS:<field_id>:<output_field>:(parameters)
+  Responsibility:
+    ├─ Build parameter string (page=, x=, y=, width=, height=, type=)
+    ├─ Validate syntax
+    ├─ Return formatted tag or error
+```
+
+#### Tag Validation
+```
+Public Function ValidateTagSyntax(tagString As String) As ValidationResult
+  Inputs: Single tag string
+  Outputs: ValidationResult (valid: Boolean, error: String)
+  Checks:
+    ├─ Starts with DS_SEARCH or DS_COORDS
+    ├─ Has required components (field_id, output_field, parameters)
+    ├─ Parameters properly formatted (pipe-separated)
+    ├─ All values present (no blanks)
+    ├─ Numeric values are actually numeric
+    └─ Data type is valid (text, number, currency, date, percentage)
+  Returns: ValidationResult with error message if invalid
+
+Public Sub ExportTagsToSheet(tags() As String)
+  Inputs: Array of tag strings
+  Outputs: TAG_ENGINE.SourceTag column populated
+  Responsibility:
+    ├─ For each tag:
+    │  ├─ Write to SourceTag column
+    │  ├─ Validate syntax
+    │  ├─ Write Status (Valid/Error) to Tag_Status column
+    │  ├─ Write error message (if applicable) to Tag_Error_Message
+    │  └─ Log to AUDIT_LOG
+    └─ Show summary message
+```
+
+---
+
+## Module 4: Validator.bas
+
+### Purpose
+Validate raw extraction inputs; check formats, completeness, ranges.
+
+### Responsibilities
+
+#### Input Validation
+```
+Public Function ValidateInputComplete(extractionData() As Variant) As ValidationResult()
+  Inputs: EXTRACTION_INPUT sheet data (all rows)
+  Outputs: Array of ValidationResult objects
+  Process:
+    FOR each row in extractionData:
+      FOR each required field (per CONFIG.output_schema):
+        IF field value is blank:
+          Create ValidationResult: invalid, "Required field blank"
+        ENDIF
+      ENDFOR
+    ENDFOR
+  Returns: Array of validation results
+
+Public Function ValidateDataFormat(extractionData() As Variant, schema() As SchemaField) As ValidationResult()
+  Inputs: Raw extraction data; expected schema
+  Outputs: Array of format validation errors
+  Process:
+    FOR each value:
+      Check against schema data type:
+        IF type = "currency": Ensure $ or numeric format
+        IF type = "date": Ensure valid date format
+        IF type = "number": Ensure numeric (no letters)
+        IF type = "text": Accept any characters
+      IF format wrong: Create ValidationResult with error
+    ENDFOR
+  Returns: Array of validation results
+
+Public Function CheckForNulls(extractionData() As Variant) As String()
+  Inputs: Raw extraction data
+  Outputs: Array of field names with null/blank values
+  Returns: List of fields missing data
+
+Public Sub GenerateValidationReport(validationResults() As ValidationResult)
+  Inputs: Array of validation results
+  Outputs: VALIDATION sheet populated with error details
+  Responsibility:
+    ├─ Write header row (Record_ID, Field, Value, Error, Severity)
+    ├─ For each validation result: write detail row
+    ├─ Calculate error count/breakdown
+    ├─ Show summary message to user
+    └─ Return TRUE/FALSE for whether to proceed
+```
+
+#### Helper Functions
+```
+Private Function IsValidDateFormat(value As String) As Boolean
+  Checks: Can value be interpreted as date?
+
+Private Function IsValidCurrencyFormat(value As String) As Boolean
+  Checks: Can value be converted to currency?
+
+Private Function IsValidNumberFormat(value As String) As Boolean
+  Checks: Is value numeric (no letters)?
+```
+
+---
+
+## Module 5: DataMapper.bas
+
+### Purpose
+Transform raw extracted values to normalized, schema-compliant data.
+
+### Responsibilities
+
+#### Data Transformation
+```
+Public Function MapRawToSchema(rawData() As Variant, schema() As SchemaField) As MappedData()
+  Inputs: Raw extracted values; target schema
+  Outputs: Array of MappedData objects (transformed values)
+  Process:
+    FOR each raw row:
+      FOR each field in row:
+        targetSchema = find schema field matching this column
+        Call ConvertDataType() → get converted value
+        Call NormalizeFormat() → apply format spec
+        Create MappedData object with transformed value
+        Call AuditLog.RecordTransformation() → log change
+      ENDFOR
+    ENDFOR
+  Returns: Array of MappedData objects
+
+Public Function ConvertDataType(rawValue As String, targetType As String) As Variant
+  Inputs: Raw string value; target data type
+  Outputs: Converted value (or error flag)
+  Logic:
+    IF targetType = "currency":
+      Remove $ and , characters
+      Convert to Double
+      Return as currency
+    ELSE IF targetType = "number":
+      Remove commas
+      Convert to Double
+      Return as number
+    ELSE IF targetType = "date":
+      Parse date in multiple formats (MM/DD/YY, DD-Mon-YYYY, etc)
+      Convert to standardized Date
+      Return as YYYY-MM-DD
+    ELSE IF targetType = "text":
+      Return as-is (no conversion)
+    ENDIF
+
+Public Function NormalizeFormat(value As Variant, formatSpec As String) As String
+  Inputs: Converted value; format specification
+  Outputs: Formatted string matching spec
+  Examples:
+    value=1250.50, formatSpec="$#,##0.00" → "$1,250.50"
+    value=2026-06-01, formatSpec="YYYY-MM-DD" → "2026-06-01"
+    value=0.955, formatSpec="#.##%" → "95.5%"
+  Returns: Formatted string
+
+Public Function HandleNullValues(value As Variant, nullRule As String) As Variant
+  Inputs: Value (which may be Null); null handling rule
+  Outputs: Handled value or NULL
+  Rules:
+    "allow" → NULL allowed, pass through
+    "default_zero" → NULL becomes 0
+    "default_empty" → NULL becomes ""
+    "flag" → NULL causes validation error
+  Returns: Handled value
+```
+
+#### Audit Trail for Transformations
+```
+Private Sub RecordTransformation(oldValue As String, newValue As String, fieldName As String, reason As String)
+  Inputs: Raw value, transformed value, field, reason
+  Outputs: Entry in AUDIT_LOG
+  Calls: AuditLog.RecordTransformation()
+  Creates audit record for every change
+```
+
+---
+
+## Module 6: QAEngine.bas
+
+### Purpose
+Apply business logic validation rules; identify and flag exceptions.
+
+### Responsibilities
+
+#### QA Rule Application
+```
+Public Function ApplyQARules(mappedData() As MappedData, qaRules() As QARule) As QAResult()
+  Inputs: Transformed data; array of QA rules
+  Outputs: Array of QAResult objects (exceptions found)
+  Process:
+    FOR each data record:
+      FOR each QA rule:
+        result = ApplyRule(record, rule)
+        IF exception found:
+          Create QAResult object
+          Call FlagExceptionForReview()
+          Call AuditLog.RecordException()
+        ENDIF
+      ENDFOR
+    ENDFOR
+  Returns: Array of QAResult exceptions
+
+Private Function ApplyRule(record As MappedData, rule As QARule) As QAResult
+  Routes to specific rule type:
+    IF rule_type = "RANGE": Call CheckRangeValidation()
+    IF rule_type = "LOOKUP": Call CheckLookupValidation()
+    IF rule_type = "FORMAT": Call CheckFormatValidation()
+    IF rule_type = "CROSS_FIELD": Call CheckCrossFieldValidation()
+    IF rule_type = "DUPLICATE": Call CheckDuplicates()
+    IF rule_type = "CUSTOM": Call CheckCustomLogic()
+```
+
+#### Specific Rule Implementations
+```
+Private Function CheckRangeValidation(value As Variant, minVal As Variant, maxVal As Variant) As Boolean
+  Logic: value >= minVal AND value <= maxVal
+  Returns: TRUE (pass) or FALSE (fail)
+
+Private Function CheckLookupValidation(value As String, lookupTable() As String) As Boolean
+  Logic: value exists in lookupTable?
+  Returns: TRUE (found) or FALSE (not found)
+
+Private Function CheckFormatValidation(value As String, regexPattern As String) As Boolean
+  Logic: value matches regex pattern?
+  Returns: TRUE (matches) or FALSE (no match)
+
+Private Function CheckCrossFieldValidation(record As MappedData, logic As String) As Boolean
+  Logic: Custom multi-field logic (e.g., invoice_date > po_date)
+  Returns: TRUE (pass) or FALSE (fail)
+
+Private Function CheckDuplicates(record As MappedData, allRecords() As MappedData, keyFields() As String) As Boolean
+  Logic: Is this record a duplicate of any prior record?
+  Returns: TRUE (duplicate) or FALSE (unique)
+```
+
+#### Exception Management
+```
+Public Sub FlagExceptionForReview(qAResult As QAResult)
+  Inputs: QAResult object
+  Outputs: Exception written to QA sheet; record marked for review
+  Responsibility:
+    ├─ Write exception details to QA sheet (new row)
+    ├─ Set status to "PENDING_REVIEW"
+    ├─ Calculate exception ID
+    └─ Return to calling code
+
+Public Sub GenerateQAReport(qaResults() As QAResult)
+  Inputs: Array of all QA results
+  Outputs: QA sheet populated; summary report shown
+  Responsibility:
+    ├─ For each exception: write detail row
+    ├─ Sort by severity (CRITICAL first)
+    ├─ Count total exceptions
+    ├─ Show summary message to user
+    └─ Return count of exceptions requiring attention
+```
+
+---
+
+## Module 7: AuditLog.bas
+
+### Purpose
+Capture all events, transformations, decisions for audit compliance.
+
+### Responsibilities
+
+#### Event Logging
+```
+Public Sub RecordTransformation(fieldName As String, oldValue As String, newValue As String, reason As String)
+  Inputs: Field, raw value, transformed value, reason
+  Outputs: Entry in AUDIT_LOG sheet
+  Record: LOG_ID, Timestamp, User, Event_Type="TRANSFORM", Field, Values, Reason
+
+Public Sub RecordException(exceptionDetail As String, severity As String)
+  Inputs: Exception description, severity level
+  Outputs: Entry in AUDIT_LOG sheet
+  Record: LOG_ID, Timestamp, User, Event_Type="EXCEPTION", Severity, Details
+
+Public Sub RecordManualOverride(fieldName As String, oldValue As String, newValue As String, justification As String, userId As String)
+  Inputs: Field, original value, override value, justification, user
+  Outputs: Entry in AUDIT_LOG sheet
+  Record: LOG_ID, Timestamp, User, Event_Type="OVERRIDE", Field, Old/New values, Justification
+
+Public Sub RecordSignOff(approverName As String, role As String, status As String)
+  Inputs: Approver name, role, approval status
+  Outputs: Entry in AUDIT_LOG sheet
+  Record: LOG_ID, Timestamp, User=approver, Event_Type="SIGNOFF", Status, Role
+```
+
+#### Report Generation
+```
+Public Function GenerateAuditTrail(Optional dateRange As String) As Report
+  Inputs: Optional date range filter
+  Outputs: Complete audit report
+  Responsibility:
+    ├─ Read entire AUDIT_LOG sheet
+    ├─ Filter by date if provided
+    ├─ Summarize events by type/severity
+    ├─ Group by user/record
+    ├─ Create formatted report
+    └─ Return Report object
+
+Public Sub ExportAuditLog(fileName As String)
+  Inputs: Output file name (CSV or Excel)
+  Outputs: AUDIT_LOG exported to file
+  Responsibility:
+    ├─ Write all AUDIT_LOG entries to file
+    ├─ Include headers
+    ├─ Handle large logs (many rows)
+    └─ Confirm file written successfully
+```
+
+#### Helper Functions
+```
+Private Function GetCurrentUser() As String
+  Gets Windows login username
+  Returns: User ID for logging
+
+Private Function GetTimestamp() As DateTime
+  Gets current date/time
+  Returns: DateTime for logging
+```
+
+---
+
+## Module Integration Points
+
+### Data Flow Between Modules
+```
+Main.LoadEngagement()
+  → ConfigManager.LoadConfig()
+    → Exposes: EngagementType, DocSpecs, TagDefinitions, QARules, OutputSchema
+
+Main.BuildTags()
+  → TagBuilder.BuildTags()
+    ← ConfigManager.GetTagDefinitions()
+    → AuditLog.RecordEvent("TAG_GENERATION")
+
+Main.ValidateInput()
+  → Validator.ValidateInputComplete()
+    ← ConfigManager.GetOutputSchema()
+    → AuditLog.RecordEvent("VALIDATION")
+
+Main.ProcessExtraction()
+  → DataMapper.MapRawToSchema()
+    ← ConfigManager.GetOutputSchema()
+    → AuditLog.RecordTransformation()
+  → QAEngine.ApplyQARules()
+    ← ConfigManager.GetQARules()
+    → AuditLog.RecordException()
+
+Main.ApproveOutput()
+  → AuditLog.RecordSignOff()
+
+All modules:
+  → AuditLog.Record*() for audit trail
+```
+
+---
+
+**Framework Version**: 1.0  
+**Last Updated**: June 2026

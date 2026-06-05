@@ -1,0 +1,8 @@
+﻿<?xml version="1.0"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Worksheet ss:Name="QA">
+    <Table>
+      <Row><Cell><Data ss:Type="String">RuleID</Data></Cell><Cell><Data ss:Type="String">RuleName</Data></Cell><Cell><Data ss:Type="String">FieldName</Data></Cell><Cell><Data ss:Type="String">RuleType</Data></Cell><Cell><Data ss:Type="String">RuleDefinition</Data></Cell><Cell><Data ss:Type="String">FailAction</Data></Cell><Cell><Data ss:Type="String">Severity</Data></Cell><Cell><Data ss:Type="String">Priority</Data></Cell><Cell><Data ss:Type="String">Result</Data></Cell><Cell><Data ss:Type="String">Comment</Data></Cell></Row>
+    </Table>
+  </Worksheet>
+</Workbook>

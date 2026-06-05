@@ -1,0 +1,2 @@
+CoordID,WorksheetName,StartCell,EndCell,LookupKey,CoordType,Usage,Notes
+CR001,AP Invoices,A1,A20,InvoiceTable,Range,Lookup invoice details,Used for DS_COORDS mapping

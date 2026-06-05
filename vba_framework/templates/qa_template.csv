@@ -1,0 +1,3 @@
+RuleID,RuleName,FieldName,RuleType,RuleDefinition,FailAction,Severity,Priority,Result,Comment
+QA001,Invoice number required,InvoiceNumber,REQUIRED,,Block,High,1,,
+QA002,Amount positive,ExtractedValue,RANGE,0|100000,Block,High,1,,
