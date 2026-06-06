@@ -1,0 +1,23 @@
+
+============================================================
+[2026-06-06 20:44:15]
+Command: python scripts/generate_workbook.py --source-pdf RE_ OBS Sampling Selections & Fieldwork Coordination.pdf
+============================================================
+Search terms : ['Joe']
+Pages        : [1]
+Total tags   : 1
+
+============================================================
+SAVED: /workspaces/Datasnipper-Proof-of-Concept-/output/engagement_20260606_204417_(ds).xlsx
+  Size   : 8 KB
+  Sheets : CONFIG, TAG_ENGINE, QA, OUTPUT, AUDIT_LOG
+  Tags   : 1
+  PDF    : RE_ OBS Sampling Selections & Fieldwork Coordination.pdf
+============================================================
+
+Next steps:
+  1. Open engagement_20260606_204417_(ds).xlsx in Excel (DataSnipper auto-processes on open)
+  2. Confirm RE_ OBS Sampling Selections & Fieldwork Coordination.pdf is in the same folder as the workbook
+  3. Check TAG_ENGINE > SourceTag column - DataSnipper reads these cells
+
+Exit code: 0
