@@ -31,10 +31,11 @@ EXIT_CODE=${PIPESTATUS[0]}
 echo "" >> "$LOG_FILE"
 echo "Exit code: $EXIT_CODE" >> "$LOG_FILE"
 
-# Push log to GitHub so Claude can read it
+# Push log + any new output files to GitHub so Claude can read them
 git add "$LOG_FILE"
+git add output/*.xlsx 2>/dev/null || true
 git commit -m "log: run $TIMESTAMP"
 git push
 
 echo ""
-echo "Log saved and pushed. Claude can now read errors/run_log.txt."
+echo "Log and output files pushed. Claude can now read errors/run_log.txt and output/."

@@ -431,10 +431,11 @@ Examples:
     source_pdf  = Path(args.source_pdf)
     pdf_filename = source_pdf.name
 
-    # Resolve output path — default includes timestamp so each run is a distinct file
+    # Resolve output path — default is output/ in the repo root, timestamped
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     default_name = f"engagement_{timestamp}_(ds).xlsx"
-    output_path = Path(args.output) if args.output else source_pdf.parent / default_name
+    repo_root = Path(__file__).parent.parent
+    output_path = Path(args.output) if args.output else repo_root / "output" / default_name
     if not output_path.stem.endswith("_(ds)"):
         output_path = output_path.parent / (output_path.stem + "_(ds).xlsx")
         print(f"Note: renamed output to {output_path.name} (DataSnipper requires _(ds) suffix)")

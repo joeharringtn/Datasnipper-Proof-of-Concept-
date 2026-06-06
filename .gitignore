@@ -17,6 +17,9 @@ env/
 *.xlsm
 *.xls
 
+# Exception: track files in output/ so they can be reviewed
+!output/*.xlsx
+
 # Test / coverage artifacts
 .pytest_cache/
 .coverage
