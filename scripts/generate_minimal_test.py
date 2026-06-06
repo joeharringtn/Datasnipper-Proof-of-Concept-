@@ -21,7 +21,7 @@ def main():
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     repo_root = Path(__file__).parent.parent
-    out_path  = repo_root / "output" / f"minimal_test_{timestamp}_(ds).xlsx"
+    out_path  = repo_root / "output" / f"minimal_test_{timestamp}(ds).xlsx"
 
     wb = Workbook()
     ws = wb.active

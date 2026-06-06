@@ -26,8 +26,9 @@ For each tag it finds, DataSnipper:
 The `.xlsx` filename **must end in `_(ds)`**.
 
 ```
-engagement_(ds).xlsx          ✓ DataSnipper auto-processes on open
-client_ap_(ds).xlsx           ✓
+engagement(ds).xlsx           ✓ DataSnipper auto-processes on open
+client_ap(ds).xlsx            ✓
+engagement_(ds).xlsx          ✗ underscore before (ds) — DataSnipper ignores this
 engagement.xlsx               ✗ DataSnipper ignores this workbook
 ```
 

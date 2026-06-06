@@ -433,12 +433,12 @@ Examples:
 
     # Resolve output path — default is output/ in the repo root, timestamped
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    default_name = f"engagement_{timestamp}_(ds).xlsx"
+    default_name = f"engagement_{timestamp}(ds).xlsx"
     repo_root = Path(__file__).parent.parent
     output_path = Path(args.output) if args.output else repo_root / "output" / default_name
-    if not output_path.stem.endswith("_(ds)"):
-        output_path = output_path.parent / (output_path.stem + "_(ds).xlsx")
-        print(f"Note: renamed output to {output_path.name} (DataSnipper requires _(ds) suffix)")
+    if not output_path.stem.endswith("(ds)"):
+        output_path = output_path.parent / (output_path.stem + "(ds).xlsx")
+        print(f"Note: renamed output to {output_path.name} (DataSnipper requires (ds) suffix)")
 
     # ── Determine search terms ────────────────────────────────────────────────
     tags: list[TagDefinition] | None = None
