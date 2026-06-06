@@ -33,7 +33,7 @@ echo "Exit code: $EXIT_CODE" >> "$LOG_FILE"
 
 # Push log + any new output files to GitHub so Claude can read them
 git add "$LOG_FILE"
-git add output/*.xlsx 2>/dev/null || true
+git add output/ 2>/dev/null || true
 git commit -m "log: run $TIMESTAMP"
 git push
 
