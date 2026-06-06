@@ -192,12 +192,12 @@ class TagDefinition(BaseModel):
     search_keywords: Optional[str] = None
     start_anchor: Optional[str] = None   # text that precedes the target value
     end_anchor: Optional[str] = None     # text that follows the target value
-    coord_page: int = Field(default=0, ge=0)
-    coord_x: int = Field(default=0, ge=0)
-    coord_y: int = Field(default=0, ge=0)
-    coord_width: int = Field(default=0, ge=0)
-    coord_height: int = Field(default=0, ge=0)
-    tolerance: int = Field(default=0, ge=0)  # pixel tolerance for coord matching
+    search_page: int = Field(default=1, ge=1)  # page number for DS_SEARCH (1-based)
+    coord_page: int = Field(default=1, ge=1)   # page number for DS_COORDS (1-based)
+    coord_x: int = Field(default=0, ge=0)      # left edge of extraction box (pixels)
+    coord_y: int = Field(default=0, ge=0)      # top edge of extraction box (pixels)
+    coord_width: int = Field(default=0, ge=0)  # box width; x2 = coord_x + coord_width
+    coord_height: int = Field(default=0, ge=0) # box height; y2 = coord_y + coord_height
     fallback_keywords: Optional[str] = None
     notes: Optional[str] = None
 

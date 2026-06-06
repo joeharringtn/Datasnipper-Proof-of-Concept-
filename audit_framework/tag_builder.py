@@ -1,47 +1,40 @@
 """
 TagBuilder — constructs DataSnipper extraction tag strings from TagDefinitions.
 
-Tag format (per TAG_SPEC.md)
------------------------------
+Actual DataSnipper tag format (v4.0+, from official documentation)
+-------------------------------------------------------------------
 
 DS_SEARCH:
-    DS_SEARCH:{field_id}:{output_field}:(parameters)
+    DS_SEARCH[filename|pageNumber|query]
 
-    Parameters (pipe-separated):
-        start={anchor}          text immediately before the target value
-        end={anchor}            text immediately after the target value
-        type={type}             data type hint: text|number|currency|date|percentage
-        context={scope}         line|paragraph|page|document (optional)
-        case_sensitive={yes|no} default no
-        fallback={alt_anchor}   alternative start anchor if primary not found
-        regex={pattern}         regex alternative to start/end anchors
+    - filename    PDF filename or path relative to the workbook location
+                  (e.g. "invoice.pdf" or "PDFS\\invoice.pdf")
+    - pageNumber  1-based page number to search on
+    - query       exact text string DataSnipper will search for in the PDF
 
-    Example:
-        DS_SEARCH:InvoiceAmount:invoice_total:(start=Total Amount:|end=Tax|type=currency)
+    Example: DS_SEARCH[invoice.pdf|1|Invoice Number]
 
 DS_COORDS:
-    DS_COORDS:{field_id}:{output_field}:(parameters)
+    DS_COORDS[filename|pageNumber|x1|y1|x2|y2]
 
-    Parameters (all required except file, tolerance):
-        file={filename}         source PDF filename
-        page={n}                1-based page number
-        x={pixels}              horizontal distance from left edge
-        y={pixels}              vertical distance from top edge
-        width={pixels}          selection box width
-        height={pixels}         selection box height
-        type={type}             data type hint
-        tolerance={pixels}      fuzzy ±pixel tolerance for position variation
+    - filename    PDF filename or path relative to the workbook location
+    - pageNumber  1-based page number
+    - x1, y1     top-left corner of the extraction box (pixels from top-left of page)
+    - x2, y2     bottom-right corner of the extraction box
 
-    Example:
-        DS_COORDS:DepositDate:deposit_date:(page=1|x=300|y=450|width=100|height=20|type=date)
+    Example: DS_COORDS[invoice.pdf|1|302|81|460|101]
 
-DS_HYBRID:
-    DS_HYBRID:{field_id}:{output_field}:(coord_params)|fallback_to:(search_params)
+Workbook naming requirement
+---------------------------
+The Excel workbook filename MUST end in _(ds) for DataSnipper to auto-process
+on open.  Example: engagement_(ds).xlsx
 
-    Tries coordinate extraction first; falls back to keyword search if no result.
-
-    Example:
-        DS_HYBRID:Total:receipt_total:(page=1|x=350|y=450|width=80|height=20|type=currency)|fallback_to:(start=Receipt Total:|end=Tax Amount|type=currency)
+File path notes
+---------------
+- Relative paths are relative to the workbook's saved location on disk.
+- Simplest setup for testing: put the PDF in the same folder as the workbook
+  and use just the filename (no directory prefix).
+- Absolute paths also work: C:\\Users\\name\\Documents\\invoice.pdf
 """
 
 from audit_framework.exceptions import TagBuildError
@@ -56,139 +49,72 @@ class TagBuilder:
         """
         Build a DS_SEARCH tag string.
 
-        Format: DS_SEARCH:{tag_id}:{field_name}:(parameters)
-
-        search_keywords maps to the start= anchor when no explicit start_anchor
-        is provided — DataSnipper uses it as the text to search for.
+        Format: DS_SEARCH[filename|pageNumber|query]
 
         Args:
-            tag_def: Must have at least one of start_anchor, end_anchor,
-                     or search_keywords set.
+            tag_def: Must have source_document and search_keywords set.
 
         Returns:
-            Formatted DS_SEARCH tag string.
+            Formatted DS_SEARCH tag string ready to paste into an Excel cell.
 
         Raises:
-            TagBuildError: If no search criterion is provided.
+            TagBuildError: If source_document or search_keywords is missing.
         """
-        if not tag_def.start_anchor and not tag_def.end_anchor and not tag_def.search_keywords:
+        if not tag_def.source_document:
             raise TagBuildError(
-                f"Tag {tag_def.tag_id}: DS_SEARCH requires at least one of "
-                "start_anchor, end_anchor, or search_keywords"
+                f"Tag {tag_def.tag_id}: source_document (PDF filename) is required for DS_SEARCH"
+            )
+        if not tag_def.search_keywords:
+            raise TagBuildError(
+                f"Tag {tag_def.tag_id}: search_keywords (query text) is required for DS_SEARCH"
             )
 
-        params: list[str] = []
-
-        if tag_def.start_anchor:
-            params.append(f"start={tag_def.start_anchor}")
-        elif tag_def.search_keywords:
-            # Treat keywords as the start anchor when no explicit anchor given
-            params.append(f"start={tag_def.search_keywords}")
-
-        if tag_def.end_anchor:
-            params.append(f"end={tag_def.end_anchor}")
-
-        params.append(f"type={tag_def.field_type.value.lower()}")
-
-        if tag_def.fallback_keywords:
-            params.append(f"fallback={tag_def.fallback_keywords}")
-
-        return f"DS_SEARCH:{tag_def.tag_id}:{tag_def.field_name}:({'|'.join(params)})"
+        return f"DS_SEARCH[{tag_def.source_document}|{tag_def.search_page}|{tag_def.search_keywords}]"
 
     @staticmethod
     def build_coords_tag(tag_def: TagDefinition) -> str:
         """
         Build a DS_COORDS tag string.
 
-        Format: DS_COORDS:{tag_id}:{field_name}:(parameters)
+        Format: DS_COORDS[filename|pageNumber|x1|y1|x2|y2]
 
-        coord_page must be >= 1; DataSnipper pages are 1-based.
+        x2 and y2 are computed from (coord_x + coord_width) and
+        (coord_y + coord_height) respectively, since DataSnipper expects
+        two corner points rather than origin + dimensions.
 
         Args:
-            tag_def: Must have source_document set and coord_page >= 1.
+            tag_def: Must have source_document set and coord_width/height > 0.
 
         Returns:
-            Formatted DS_COORDS tag string.
+            Formatted DS_COORDS tag string ready to paste into an Excel cell.
 
         Raises:
-            TagBuildError: If source_document is missing or coord_page is 0.
+            TagBuildError: If source_document is missing or box dimensions are zero.
         """
         if not tag_def.source_document:
-            raise TagBuildError(f"Tag {tag_def.tag_id}: source_document required for DS_COORDS")
-
-        if tag_def.coord_page < 1:
             raise TagBuildError(
-                f"Tag {tag_def.tag_id}: coord_page must be >= 1 (got {tag_def.coord_page})"
+                f"Tag {tag_def.tag_id}: source_document (PDF filename) is required for DS_COORDS"
+            )
+        if tag_def.coord_width == 0 or tag_def.coord_height == 0:
+            raise TagBuildError(
+                f"Tag {tag_def.tag_id}: coord_width and coord_height must be > 0 for DS_COORDS"
             )
 
-        params: list[str] = [
-            f"file={tag_def.source_document}",
-            f"page={tag_def.coord_page}",
-            f"x={tag_def.coord_x}",
-            f"y={tag_def.coord_y}",
-            f"width={tag_def.coord_width}",
-            f"height={tag_def.coord_height}",
-            f"type={tag_def.field_type.value.lower()}",
-        ]
+        x2 = tag_def.coord_x + tag_def.coord_width
+        y2 = tag_def.coord_y + tag_def.coord_height
 
-        if tag_def.tolerance > 0:
-            params.append(f"tolerance={tag_def.tolerance}")
-
-        return f"DS_COORDS:{tag_def.tag_id}:{tag_def.field_name}:({'|'.join(params)})"
+        return (
+            f"DS_COORDS[{tag_def.source_document}|{tag_def.coord_page}"
+            f"|{tag_def.coord_x}|{tag_def.coord_y}|{x2}|{y2}]"
+        )
 
     @staticmethod
     def build_hybrid_tag(tag_def: TagDefinition) -> str:
-        """
-        Build a DS_HYBRID tag string.
-
-        Format: DS_HYBRID:{tag_id}:{field_name}:(coord_params)|fallback_to:(search_params)
-
-        DataSnipper tries coordinate extraction first; falls back to keyword
-        search if the coordinate region yields no value.
-
-        Args:
-            tag_def: Must have source_document + valid coords AND at least one
-                     search criterion (start_anchor or search_keywords).
-
-        Returns:
-            Formatted DS_HYBRID tag string.
-
-        Raises:
-            TagBuildError: If either strategy's required fields are missing.
-        """
-        if not tag_def.source_document:
-            raise TagBuildError(
-                f"Tag {tag_def.tag_id}: source_document required for HYBRID (coords strategy)"
-            )
-        if not tag_def.start_anchor and not tag_def.search_keywords:
-            raise TagBuildError(
-                f"Tag {tag_def.tag_id}: start_anchor or search_keywords required for HYBRID (search fallback)"
-            )
-
-        coord_params = [
-            f"file={tag_def.source_document}",
-            f"page={tag_def.coord_page}",
-            f"x={tag_def.coord_x}",
-            f"y={tag_def.coord_y}",
-            f"width={tag_def.coord_width}",
-            f"height={tag_def.coord_height}",
-            f"type={tag_def.field_type.value.lower()}",
-        ]
-        if tag_def.tolerance > 0:
-            coord_params.append(f"tolerance={tag_def.tolerance}")
-
-        search_params: list[str] = []
-        if tag_def.start_anchor:
-            search_params.append(f"start={tag_def.start_anchor}")
-        elif tag_def.search_keywords:
-            search_params.append(f"start={tag_def.search_keywords}")
-        if tag_def.end_anchor:
-            search_params.append(f"end={tag_def.end_anchor}")
-        search_params.append(f"type={tag_def.field_type.value.lower()}")
-
-        coord_str = "|".join(coord_params)
-        search_str = "|".join(search_params)
-        return f"DS_HYBRID:{tag_def.tag_id}:{tag_def.field_name}:({coord_str})|fallback_to:({search_str})"
+        """DS_HYBRID is not part of the DataSnipper v4.0 format. Use DS_SEARCH or DS_COORDS."""
+        raise TagBuildError(
+            f"Tag {tag_def.tag_id}: DS_HYBRID is not supported by DataSnipper. "
+            "Use DS_SEARCH for text-based extraction or DS_COORDS for coordinate-based extraction."
+        )
 
     @staticmethod
     def build_tag(tag_def: TagDefinition) -> str:
@@ -240,9 +166,11 @@ class TagBuilder:
     @staticmethod
     def validate_tag_syntax(tag_string: str) -> tuple[bool, str]:
         """
-        Validate that a tag string has the expected structural format.
+        Validate that a tag string matches the DataSnipper format.
 
-        Accepts DS_SEARCH, DS_COORDS, and DS_HYBRID tag types.
+        Valid formats:
+            DS_SEARCH[filename|page|query]
+            DS_COORDS[filename|page|x1|y1|x2|y2]
 
         Returns:
             (True, "")                  if valid.
@@ -251,15 +179,20 @@ class TagBuilder:
         if not tag_string or not isinstance(tag_string, str):
             return False, "Tag must be a non-empty string"
 
-        valid_prefixes = ("DS_SEARCH:", "DS_COORDS:", "DS_HYBRID:")
+        valid_prefixes = ("DS_SEARCH[", "DS_COORDS[")
         if not tag_string.startswith(valid_prefixes):
-            return False, f"Tag must start with one of: {', '.join(valid_prefixes)}"
+            return False, "Tag must start with DS_SEARCH[ or DS_COORDS["
 
-        # All types use TYPE:field_id:output_field:(params) — need >= 3 colons
-        if tag_string.count(":") < 3:
-            return False, "Tag must have at least 4 colon-separated parts"
+        if not tag_string.endswith("]"):
+            return False, "Tag must end with ]"
 
-        if "(" not in tag_string or ")" not in tag_string:
-            return False, "Tag parameters must be enclosed in parentheses"
+        inner = tag_string[tag_string.index("[") + 1:-1]
+        parts = inner.split("|")
+
+        if tag_string.startswith("DS_SEARCH[") and len(parts) < 3:
+            return False, "DS_SEARCH tag requires 3 pipe-separated parts: filename|page|query"
+
+        if tag_string.startswith("DS_COORDS[") and len(parts) < 6:
+            return False, "DS_COORDS tag requires 6 pipe-separated parts: filename|page|x1|y1|x2|y2"
 
         return True, ""
