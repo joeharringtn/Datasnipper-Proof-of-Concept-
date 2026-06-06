@@ -1,0 +1,208 @@
+joeharringtn ➜ /workspaces/Datasnipper-Proof-of-Concept- (main) $ git pull
+remote: Enumerating objects: 29, done.
+remote: Counting objects: 100% (29/29), done.
+remote: Compressing objects: 100% (24/24), done.
+remote: Total 26 (delta 1), reused 26 (delta 1), pack-reused 0 (from 0)
+Unpacking objects: 100% (26/26), 42.29 KiB | 1.08 MiB/s, done.
+From https://github.com/joeharringtn/Datasnipper-Proof-of-Concept-
+   3f4b98d..1038c1f  main       -> origin/main
+Updating 3f4b98d..1038c1f
+Fast-forward
+ .gitignore                                                                               |  31 +++
+ audit_framework/{audit_framework => }/__init__.py                                        |  54 ++---
+ audit_framework/audit_framework/config_manager.py                                        | 340 -------------------------------
+ audit_framework/audit_framework/excel_utils.py                                           | 246 -----------------------
+ audit_framework/audit_framework/exceptions.py                                            |  63 ------
+ audit_framework/audit_framework/models.py                                                | 214 --------------------
+ audit_framework/audit_framework/tag_builder.py                                           | 114 -----------
+ {vba_framework/python_refactor/audit_framework => audit_framework}/audit_log.py          | 705 ++++++++++++++++++++++++++++++++++------------------------------
+ {vba_framework/python_refactor/audit_framework => audit_framework}/cli.py                | 552 +++++++++++++++++++++++++-------------------------
+ {vba_framework/python_refactor/audit_framework => audit_framework}/config_manager.py     | 868 +++++++++++++++++++++++++++++++++++++++++++------------------------------------
+ audit_framework/data_mapper.py                                                           | 272 +++++++++++++++++++++++++
+ audit_framework/excel_utils.py                                                           | 249 +++++++++++++++++++++++
+ audit_framework/exceptions.py                                                            | 117 +++++++++++
+ audit_framework/models.py                                                                | 312 +++++++++++++++++++++++++++++
+ {vba_framework/python_refactor/audit_framework => audit_framework}/qa_engine.py          | 728 +++++++++++++++++++++++++++++++++++-------------------------------
+ audit_framework/tag_builder.py                                                           | 265 ++++++++++++++++++++++++
+ audit_framework/validator.py                                                             | 351 ++++++++++++++++++++++++++++++++
+ vba_framework/python_refactor/pyproject.toml => pyproject.toml                           |  94 ++++-----
+ vba_framework/python_refactor/requirements.txt => requirements.txt                       |  26 +--
+ scripts/generate_workbook.py                                                             | 454 +++++++++++++++++++++++++++++++++++++++++
+ {vba_framework/python_refactor/tests => tests}/__init__.py                               |  14 +-
+ {vba_framework/python_refactor/tests => tests}/test_config_manager.py                    | 128 ++++++------
+ {vba_framework/python_refactor/tests => tests}/test_qa_engine.py                         | 292 +++++++++++++--------------
+ {vba_framework/python_refactor/tests => tests}/test_tag_builder.py                       | 196 +++++++++---------
+ {vba_framework/python_refactor/tests => tests}/test_validator.py                         | 204 +++++++++----------
+ vba_framework/python_refactor/IMPLEMENTATION_SUMMARY.md                                  | 642 ----------------------------------------------------------
+ vba_framework/python_refactor/INDEX.md                                                   | 330 ------------------------------
+ vba_framework/python_refactor/README.md                                                  | 564 ---------------------------------------------------
+ vba_framework/python_refactor/audit_framework/__init__.py                                |  27 ---
+ vba_framework/python_refactor/audit_framework/__pycache__/audit_log.cpython-313.pyc      | Bin 13383 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/__pycache__/cli.cpython-313.pyc            | Bin 15887 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/__pycache__/config_manager.cpython-313.pyc | Bin 17265 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/__pycache__/data_mapper.cpython-313.pyc    | Bin 7865 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/__pycache__/excel_utils.cpython-313.pyc    | Bin 9576 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/__pycache__/exceptions.cpython-313.pyc     | Bin 2476 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/__pycache__/models.cpython-313.pyc         | Bin 10689 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/__pycache__/qa_engine.cpython-313.pyc      | Bin 14616 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/__pycache__/tag_builder.cpython-313.pyc    | Bin 7405 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/__pycache__/validator.cpython-313.pyc      | Bin 10419 -> 0 bytes
+ vba_framework/python_refactor/audit_framework/data_mapper.py                             | 224 ---------------------
+ vba_framework/python_refactor/audit_framework/excel_utils.py                             | 246 -----------------------
+ vba_framework/python_refactor/audit_framework/exceptions.py                              |  63 ------
+ vba_framework/python_refactor/audit_framework/models.py                                  | 214 --------------------
+ vba_framework/python_refactor/audit_framework/tag_builder.py                             | 197 ------------------
+ vba_framework/python_refactor/audit_framework/validator.py                               | 308 ----------------------------
+ 45 files changed, 4061 insertions(+), 5643 deletions(-)
+ create mode 100644 .gitignore
+ rename audit_framework/{audit_framework => }/__init__.py (95%)
+ delete mode 100644 audit_framework/audit_framework/config_manager.py
+ delete mode 100644 audit_framework/audit_framework/excel_utils.py
+ delete mode 100644 audit_framework/audit_framework/exceptions.py
+ delete mode 100644 audit_framework/audit_framework/models.py
+ delete mode 100644 audit_framework/audit_framework/tag_builder.py
+ rename {vba_framework/python_refactor/audit_framework => audit_framework}/audit_log.py (60%)
+ rename {vba_framework/python_refactor/audit_framework => audit_framework}/cli.py (56%)
+ rename {vba_framework/python_refactor/audit_framework => audit_framework}/config_manager.py (56%)
+ create mode 100644 audit_framework/data_mapper.py
+ create mode 100644 audit_framework/excel_utils.py
+ create mode 100644 audit_framework/exceptions.py
+ create mode 100644 audit_framework/models.py
+ rename {vba_framework/python_refactor/audit_framework => audit_framework}/qa_engine.py (50%)
+ create mode 100644 audit_framework/tag_builder.py
+ create mode 100644 audit_framework/validator.py
+ rename vba_framework/python_refactor/pyproject.toml => pyproject.toml (93%)
+ rename vba_framework/python_refactor/requirements.txt => requirements.txt (81%)
+ create mode 100644 scripts/generate_workbook.py
+ rename {vba_framework/python_refactor/tests => tests}/__init__.py (96%)
+ rename {vba_framework/python_refactor/tests => tests}/test_config_manager.py (96%)
+ rename {vba_framework/python_refactor/tests => tests}/test_qa_engine.py (96%)
+ rename {vba_framework/python_refactor/tests => tests}/test_tag_builder.py (96%)
+ rename {vba_framework/python_refactor/tests => tests}/test_validator.py (96%)
+ delete mode 100644 vba_framework/python_refactor/IMPLEMENTATION_SUMMARY.md
+ delete mode 100644 vba_framework/python_refactor/INDEX.md
+ delete mode 100644 vba_framework/python_refactor/README.md
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__init__.py
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/audit_log.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/cli.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/config_manager.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/data_mapper.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/excel_utils.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/exceptions.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/models.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/qa_engine.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/tag_builder.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/__pycache__/validator.cpython-313.pyc
+ delete mode 100644 vba_framework/python_refactor/audit_framework/data_mapper.py
+ delete mode 100644 vba_framework/python_refactor/audit_framework/excel_utils.py
+ delete mode 100644 vba_framework/python_refactor/audit_framework/exceptions.py
+ delete mode 100644 vba_framework/python_refactor/audit_framework/models.py
+ delete mode 100644 vba_framework/python_refactor/audit_framework/tag_builder.py
+ delete mode 100644 vba_framework/python_refactor/audit_framework/validator.py
+@joeharringtn ➜ /workspaces/Datasnipper-Proof-of-Concept- (main) $ pip install -r requirements.txt
+Collecting openpyxl (from -r requirements.txt (line 1))
+  Downloading openpyxl-3.1.5-py2.py3-none-any.whl.metadata (2.5 kB)
+Collecting click (from -r requirements.txt (line 3))
+  Downloading click-8.4.1-py3-none-any.whl.metadata (2.6 kB)
+Requirement already satisfied: python-dateutil in /home/codespace/.local/lib/python3.12/site-packages (from -r requirements.txt (line 4)) (2.9.0.post0)
+Collecting pytz (from -r requirements.txt (line 5))
+  Downloading pytz-2026.2-py2.py3-none-any.whl.metadata (22 kB)
+Collecting pytest (from -r requirements.txt (line 8))
+  Downloading pytest-9.0.3-py3-none-any.whl.metadata (7.6 kB)
+Collecting pytest-cov (from -r requirements.txt (line 9))
+  Downloading pytest_cov-7.1.0-py3-none-any.whl.metadata (32 kB)
+Collecting black (from -r requirements.txt (line 10))
+  Downloading black-26.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (95 kB)
+Collecting isort (from -r requirements.txt (line 11))
+  Downloading isort-8.0.1-py3-none-any.whl.metadata (11 kB)
+Collecting pylint (from -r requirements.txt (line 12))
+  Downloading pylint-4.0.5-py3-none-any.whl.metadata (12 kB)
+Collecting mypy (from -r requirements.txt (line 13))
+  Downloading mypy-2.1.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.3 kB)
+Collecting pydantic[email] (from -r requirements.txt (line 2))
+  Downloading pydantic-2.13.4-py3-none-any.whl.metadata (109 kB)
+Collecting et-xmlfile (from openpyxl->-r requirements.txt (line 1))
+  Downloading et_xmlfile-2.0.0-py3-none-any.whl.metadata (2.7 kB)
+Collecting annotated-types>=0.6.0 (from pydantic[email]->-r requirements.txt (line 2))
+  Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.46.4 (from pydantic[email]->-r requirements.txt (line 2))
+  Downloading pydantic_core-2.46.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+Requirement already satisfied: typing-extensions>=4.14.1 in /home/codespace/.local/lib/python3.12/site-packages (from pydantic[email]->-r requirements.txt (line 2)) (4.15.0)
+Collecting typing-inspection>=0.4.2 (from pydantic[email]->-r requirements.txt (line 2))
+  Downloading typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+Collecting email-validator>=2.0.0 (from pydantic[email]->-r requirements.txt (line 2))
+  Downloading email_validator-2.3.0-py3-none-any.whl.metadata (26 kB)
+Requirement already satisfied: six>=1.5 in /home/codespace/.local/lib/python3.12/site-packages (from python-dateutil->-r requirements.txt (line 4)) (1.17.0)
+Collecting iniconfig>=1.0.1 (from pytest->-r requirements.txt (line 8))
+  Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Requirement already satisfied: packaging>=22 in /home/codespace/.local/lib/python3.12/site-packages (from pytest->-r requirements.txt (line 8)) (26.0)
+Collecting pluggy<2,>=1.5 (from pytest->-r requirements.txt (line 8))
+  Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Requirement already satisfied: pygments>=2.7.2 in /home/codespace/.local/lib/python3.12/site-packages (from pytest->-r requirements.txt (line 8)) (2.19.2)
+Collecting coverage>=7.10.6 (from coverage[toml]>=7.10.6->pytest-cov->-r requirements.txt (line 9))
+  Downloading coverage-7.14.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (8.6 kB)
+Collecting mypy-extensions>=0.4.3 (from black->-r requirements.txt (line 10))
+  Downloading mypy_extensions-1.1.0-py3-none-any.whl.metadata (1.1 kB)
+Collecting pathspec>=1.0.0 (from black->-r requirements.txt (line 10))
+  Downloading pathspec-1.1.1-py3-none-any.whl.metadata (14 kB)
+Requirement already satisfied: platformdirs>=2 in /home/codespace/.local/lib/python3.12/site-packages (from black->-r requirements.txt (line 10)) (4.9.4)
+Collecting pytokens~=0.4.0 (from black->-r requirements.txt (line 10))
+  Downloading pytokens-0.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (3.8 kB)
+Collecting astroid<=4.1.dev0,>=4.0.2 (from pylint->-r requirements.txt (line 12))
+  Downloading astroid-4.0.4-py3-none-any.whl.metadata (4.4 kB)
+Collecting dill>=0.3.6 (from pylint->-r requirements.txt (line 12))
+  Downloading dill-0.4.1-py3-none-any.whl.metadata (10 kB)
+Collecting mccabe<0.8,>=0.6 (from pylint->-r requirements.txt (line 12))
+  Downloading mccabe-0.7.0-py2.py3-none-any.whl.metadata (5.0 kB)
+Collecting tomlkit>=0.10.1 (from pylint->-r requirements.txt (line 12))
+  Downloading tomlkit-0.15.0-py3-none-any.whl.metadata (2.8 kB)
+Collecting librt>=0.11.0 (from mypy->-r requirements.txt (line 13))
+  Downloading librt-0.11.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (1.3 kB)
+Collecting ast-serialize<1.0.0,>=0.3.0 (from mypy->-r requirements.txt (line 13))
+  Downloading ast_serialize-0.5.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.3 kB)
+Collecting dnspython>=2.0.0 (from email-validator>=2.0.0->pydantic[email]->-r requirements.txt (line 2))
+  Downloading dnspython-2.8.0-py3-none-any.whl.metadata (5.7 kB)
+Requirement already satisfied: idna>=2.0.0 in /home/codespace/.local/lib/python3.12/site-packages (from email-validator>=2.0.0->pydantic[email]->-r requirements.txt (line 2)) (3.11)
+Downloading openpyxl-3.1.5-py2.py3-none-any.whl (250 kB)
+Downloading pydantic-2.13.4-py3-none-any.whl (472 kB)
+Downloading pydantic_core-2.46.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 47.0 MB/s  0:00:00
+Downloading click-8.4.1-py3-none-any.whl (116 kB)
+Downloading pytz-2026.2-py2.py3-none-any.whl (510 kB)
+Downloading pytest-9.0.3-py3-none-any.whl (375 kB)
+Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+Downloading pytest_cov-7.1.0-py3-none-any.whl (22 kB)
+Downloading black-26.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.9/1.9 MB 32.2 MB/s  0:00:00
+Downloading pytokens-0.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (269 kB)
+Downloading isort-8.0.1-py3-none-any.whl (89 kB)
+Downloading pylint-4.0.5-py3-none-any.whl (536 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.7/536.7 kB 13.3 MB/s  0:00:00
+Downloading astroid-4.0.4-py3-none-any.whl (276 kB)
+Downloading mccabe-0.7.0-py2.py3-none-any.whl (7.3 kB)
+Downloading mypy-2.1.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (15.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 15.1/15.1 MB 49.7 MB/s  0:00:00
+Downloading ast_serialize-0.5.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 32.6 MB/s  0:00:00
+Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Downloading coverage-7.14.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (254 kB)
+Downloading dill-0.4.1-py3-none-any.whl (120 kB)
+Downloading email_validator-2.3.0-py3-none-any.whl (35 kB)
+Downloading dnspython-2.8.0-py3-none-any.whl (331 kB)
+Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Downloading librt-0.11.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (513 kB)
+Downloading mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)
+Downloading pathspec-1.1.1-py3-none-any.whl (57 kB)
+Downloading tomlkit-0.15.0-py3-none-any.whl (41 kB)
+Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+Downloading et_xmlfile-2.0.0-py3-none-any.whl (18 kB)
+Installing collected packages: pytz, typing-inspection, tomlkit, pytokens, pydantic-core, pluggy, pathspec, mypy-extensions, mccabe, librt, isort, iniconfig, et-xmlfile, dnspython, dill, coverage, click, astroid, ast-serialize, annotated-types, pytest, pylint, pydantic, openpyxl, mypy, email-validator, black, pytest-cov
+Successfully installed annotated-types-0.7.0 ast-serialize-0.5.0 astroid-4.0.4 black-26.5.1 click-8.4.1 coverage-7.14.1 dill-0.4.1 dnspython-2.8.0 email-validator-2.3.0 et-xmlfile-2.0.0 iniconfig-2.3.0 isort-8.0.1 librt-0.11.0 mccabe-0.7.0 mypy-2.1.0 mypy-extensions-1.1.0 openpyxl-3.1.5 pathspec-1.1.1 pluggy-1.6.0 pydantic-2.13.4 pydantic-core-2.46.4 pylint-4.0.5 pytest-9.0.3 pytest-cov-7.1.0 pytokens-0.4.1 pytz-2026.2 tomlkit-0.15.0 typing-inspection-0.4.2
+
+[notice] A new release of pip is available: 26.0.1 -> 26.1.2
+[notice] To update, run: python3 -m pip install --upgrade pip
+@joeharringtn ➜ /workspaces/Datasnipper-Proof-of-Concept- (main) $ python scripts/generate_workbook.py --source-pdf RE_ OBS Sampling Selections & Fieldwork Coordination.pdf
+[1] 4788
+bash: Fieldwork: command not found
+@joeharringtn ➜ /workspaces/Datasnipper-Proof-of-Concept- (main) $ usage: generate_workbook.py [-h] [--output OUTPUT] [--engagement-id ENGAGEMENT_ID] [--client CLIENT] [--auditor AUDITOR] [--source-pdf SOURCE_PDF]
+generate_workbook.py: error: unrecognized arguments: OBS Sampling Selections
