@@ -38,7 +38,7 @@ Usage
 import argparse
 import re
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from openpyxl import Workbook
@@ -366,10 +366,14 @@ def generate(output_path: Path, tags: list[TagDefinition], config: dict) -> None
     wb.save(output_path)
 
     pdf_name = config.get("source_pdf", "")
-    print(f"\nGenerated : {output_path.resolve()}")
-    print(f"Sheets    : {', '.join(wb.sheetnames)}")
-    print(f"Tags      : {len(tags)}")
-    print(f"PDF in tag: {pdf_name}")
+    size_kb = output_path.stat().st_size // 1024
+    print(f"\n{'='*60}")
+    print(f"SAVED: {output_path.resolve()}")
+    print(f"  Size   : {size_kb} KB")
+    print(f"  Sheets : {', '.join(wb.sheetnames)}")
+    print(f"  Tags   : {len(tags)}")
+    print(f"  PDF    : {pdf_name}")
+    print(f"{'='*60}")
     print()
     print("Next steps:")
     print(f"  1. Open {output_path.name} in Excel (DataSnipper auto-processes on open)")
@@ -427,8 +431,10 @@ Examples:
     source_pdf  = Path(args.source_pdf)
     pdf_filename = source_pdf.name
 
-    # Resolve output path — default to same folder as PDF
-    output_path = Path(args.output) if args.output else source_pdf.parent / "engagement_(ds).xlsx"
+    # Resolve output path — default includes timestamp so each run is a distinct file
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    default_name = f"engagement_{timestamp}_(ds).xlsx"
+    output_path = Path(args.output) if args.output else source_pdf.parent / default_name
     if not output_path.stem.endswith("_(ds)"):
         output_path = output_path.parent / (output_path.stem + "_(ds).xlsx")
         print(f"Note: renamed output to {output_path.name} (DataSnipper requires _(ds) suffix)")
