@@ -424,42 +424,71 @@ def generate(output_path: Path, config: dict) -> None:
 
     wb.save(output_path)
 
-    print(f"Generated : {output_path}")
+    pdf_name = config.get("source_pdf", "")
+    print(f"Generated : {output_path.resolve()}")
     print(f"Sheets    : {', '.join(wb.sheetnames)}")
     print(f"Tags      : {len(tags)}")
-    print(f"Source PDF: {config.get('source_pdf')} (must be in same folder as the workbook)")
+    print(f"PDF in tag: {pdf_name}  (DataSnipper resolves this relative to the workbook)")
     print()
     print("Next steps:")
-    print("  1. git push here; git pull on your DataSnipper machine")
-    print(f"  2. Copy your PDF to the same folder as {output_path.name}")
-    print(f"  3. Open {output_path.name} in Excel")
-    print("  4. DataSnipper auto-processes on open — check the TAG_ENGINE SourceTag column")
-    print("  5. If tags don't fire, verify the PDF filename in SourceTag matches exactly")
-    print("  6. For DS_SEARCH: update search_keywords to match text in your actual PDF")
-    print("  7. For DS_COORDS: update coordinates using DataSnipper's hover tool")
+    print(f"  1. Open {output_path.name} in Excel (DataSnipper auto-processes on open)")
+    print(f"  2. Confirm {pdf_name} is in the same folder as the workbook")
+    print("  3. Check TAG_ENGINE > SourceTag column - DataSnipper reads these cells")
+    print("  4. If no snips appear: open TAG_ENGINE, check SourceTag values look correct")
+    print("  5. Update search_keywords in generate_workbook.py to match text in your PDF,")
+    print("     then rerun this script to regenerate")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate a DataSnipper_(ds) engagement workbook")
+    parser = argparse.ArgumentParser(
+        description="Generate a DataSnipper_(ds) engagement workbook",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples (run on your work machine where the PDF lives):
+
+  # Full path to PDF — workbook is created in the same folder as the PDF
+  python scripts/generate_workbook.py --source-pdf "C:\\Audits\\RE_ OBS Sampling.pdf"
+
+  # Current directory — PDF must be copied to the same folder as the xlsx
+  python scripts/generate_workbook.py --source-pdf "invoice.pdf"
+
+  # Override output location explicitly
+  python scripts/generate_workbook.py \\
+      --source-pdf "C:\\Audits\\invoice.pdf" \\
+      --output "C:\\Audits\\client_ap_(ds).xlsx"
+""",
+    )
     parser.add_argument(
-        "--output", default="engagement_(ds).xlsx",
-        help="Output .xlsx filename — must end in _(ds) for DataSnipper to auto-process",
+        "--source-pdf", required=True,
+        help=(
+            "Path to the source PDF. If a full/relative path is given, the workbook "
+            "is generated in the same folder so DataSnipper can find the PDF by filename. "
+            "Example: --source-pdf \"C:\\Audits\\invoice.pdf\""
+        ),
+    )
+    parser.add_argument(
+        "--output", default=None,
+        help="Override output path. Defaults to engagement_(ds).xlsx next to the PDF.",
     )
     parser.add_argument("--engagement-id", default="ENG-2026-001")
     parser.add_argument("--client", default="Sample Client Corp")
     parser.add_argument("--auditor", default="Lead Auditor")
-    parser.add_argument(
-        "--source-pdf", default="vendor_invoice.pdf",
-        help="PDF filename as DataSnipper will see it (use just the filename if PDF is in same folder)",
-    )
     args = parser.parse_args()
 
+    source_pdf = Path(args.source_pdf)
+    pdf_filename = source_pdf.name  # just the filename for use inside tag strings
+
+    # Default output: same directory as the PDF so DataSnipper resolves the
+    # relative path correctly (filename only, no directory prefix needed in tags)
+    if args.output:
+        output_path = Path(args.output)
+    else:
+        output_path = source_pdf.parent / "engagement_(ds).xlsx"
+
     # Enforce the _(ds) naming requirement
-    output_name = args.output
-    if not Path(output_name).stem.endswith("_(ds)"):
-        stem = Path(output_name).stem
-        output_name = stem + "_(ds).xlsx"
-        print(f"Note: renamed output to {output_name} (DataSnipper requires _(ds) suffix)")
+    if not output_path.stem.endswith("_(ds)"):
+        output_path = output_path.parent / (output_path.stem + "_(ds).xlsx")
+        print(f"Note: renamed output to {output_path.name} (DataSnipper requires _(ds) suffix)")
 
     today = date.today()
     config = {
@@ -470,10 +499,10 @@ def main() -> None:
         "lead_auditor":    args.auditor,
         "client_name":     args.client,
         "workflow_type":   "SIMPLE",
-        "source_pdf":      args.source_pdf,
+        "source_pdf":      pdf_filename,  # filename only — DataSnipper resolves relative to workbook
     }
 
-    generate(Path(output_name), config)
+    generate(output_path, config)
 
 
 if __name__ == "__main__":
