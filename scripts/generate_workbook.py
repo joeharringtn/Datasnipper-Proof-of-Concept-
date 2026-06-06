@@ -401,8 +401,8 @@ Examples:
                         help="Path to the source PDF")
     parser.add_argument("--output", default=None,
                         help="Output xlsx path (defaults to engagement_(ds).xlsx next to the PDF)")
-    parser.add_argument("--terms", default=None,
-                        help="Comma-separated search terms to skip the interactive prompt")
+    parser.add_argument("--terms", default="Joe",
+                        help="Comma-separated search terms (default: 'Joe')")
     parser.add_argument("--pages", default="1",
                         help="Pages to search: single ('1'), range ('1-5'), or list ('1,3,5'). Default: 1")
     parser.add_argument("--engagement-id", default="ENG-2026-001")
@@ -442,33 +442,11 @@ Examples:
     # ── Determine search terms ────────────────────────────────────────────────
     tags: list[TagDefinition] | None = None
 
-    if args.terms:
-        # Non-interactive: terms passed directly on the command line
-        term_list = [t.strip() for t in args.terms.split(",") if t.strip()]
-        print(f"Using {len(term_list)} term(s) across {len(pages)} page(s) = {len(term_list) * len(pages)} tags")
-        tags = make_dynamic_tags(pdf_filename, term_list, pages=pages)
-
-    elif source_pdf.exists():
-        # Interactive: read the PDF and let the user pick
-        # Use first page in the range for candidate extraction
-        print(f"Reading PDF: {source_pdf}")
-        candidates = extract_pdf_candidates(source_pdf, page=pages[0])
-
-        if candidates:
-            selected = pick_terms_interactively(candidates)
-            if selected:
-                tags = make_dynamic_tags(pdf_filename, selected, pages=pages)
-            else:
-                print("No terms selected — using placeholder tags")
-        else:
-            print("No text extracted from PDF (may be a scanned image) — using placeholder tags")
-
-    else:
-        print(f"PDF not found at {source_pdf} — using placeholder tags")
-        print("(This is expected if generating on a machine without the PDF)")
-
-    if tags is None:
-        tags = make_sample_ap_tags(source_doc=pdf_filename)
+    term_list = [t.strip() for t in args.terms.split(",") if t.strip()]
+    print(f"Search terms : {term_list}")
+    print(f"Pages        : {pages}")
+    print(f"Total tags   : {len(term_list) * len(pages)}")
+    tags = make_dynamic_tags(pdf_filename, term_list, pages=pages)
 
     # ── Build config and generate ─────────────────────────────────────────────
     today = date.today()
