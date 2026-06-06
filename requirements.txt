@@ -3,6 +3,7 @@ pydantic[email]
 click
 python-dateutil
 pytz
+pdfplumber
 
 # Dev dependencies
 pytest
