@@ -151,23 +151,32 @@ def pick_terms_interactively(candidates: list[str]) -> list[str]:
     return [t.strip() for t in raw.split(",") if t.strip()]
 
 
-def make_dynamic_tags(source_doc: str, terms: list[str], page: int = 1) -> list[TagDefinition]:
-    """Build TagDefinitions from a list of search term strings."""
-    tags = []
-    for i, term in enumerate(terms, 1):
-        # Build a clean snake_case field name from the term
-        field_name = re.sub(r"[^a-z0-9]+", "_", term.lower()).strip("_")
-        field_name = field_name or f"field_{i}"
+def make_dynamic_tags(source_doc: str, terms: list[str], pages: list[int]) -> list[TagDefinition]:
+    """
+    Build TagDefinitions from search terms × pages.
 
-        tags.append(TagDefinition(
-            tag_id=f"TAG_{i:03d}_S",
-            extraction_method=ExtractionMethod.DS_SEARCH,
-            field_name=field_name,
-            source_document=source_doc,
-            search_page=page,
-            search_keywords=term,
-            notes=f"Auto-generated from PDF text on page {page}",
-        ))
+    One tag is created per (term, page) combination so DataSnipper searches
+    every requested page.  Field names get a _p{n} suffix when multiple pages
+    are requested so each tag has a unique name.
+    """
+    tags = []
+    counter = 1
+    multi_page = len(pages) > 1
+    for term in terms:
+        for page in pages:
+            field_name = re.sub(r"[^a-z0-9]+", "_", term.lower()).strip("_") or f"field_{counter}"
+            if multi_page:
+                field_name = f"{field_name}_p{page}"
+            tags.append(TagDefinition(
+                tag_id=f"TAG_{counter:03d}_S",
+                extraction_method=ExtractionMethod.DS_SEARCH,
+                field_name=field_name,
+                source_document=source_doc,
+                search_page=page,
+                search_keywords=term,
+                notes=f"Search page {page} for '{term}'",
+            ))
+            counter += 1
     return tags
 
 
@@ -390,12 +399,30 @@ Examples:
                         help="Output xlsx path (defaults to engagement_(ds).xlsx next to the PDF)")
     parser.add_argument("--terms", default=None,
                         help="Comma-separated search terms to skip the interactive prompt")
-    parser.add_argument("--page", type=int, default=1,
-                        help="PDF page to extract search candidates from (default: 1)")
+    parser.add_argument("--pages", default="1",
+                        help="Pages to search: single ('1'), range ('1-5'), or list ('1,3,5'). Default: 1")
     parser.add_argument("--engagement-id", default="ENG-2026-001")
     parser.add_argument("--client", default="Sample Client Corp")
     parser.add_argument("--auditor", default="Lead Auditor")
     args = parser.parse_args()
+
+    # Parse --pages into a list of ints: "1-5" → [1,2,3,4,5], "1,3" → [1,3]
+    def parse_pages(spec: str) -> list[int]:
+        pages = []
+        for part in spec.split(","):
+            part = part.strip()
+            if "-" in part:
+                start, end = part.split("-", 1)
+                pages.extend(range(int(start), int(end) + 1))
+            else:
+                pages.append(int(part))
+        return pages
+
+    try:
+        pages = parse_pages(args.pages)
+    except ValueError:
+        print(f"ERROR: invalid --pages value '{args.pages}'. Use '1', '1-5', or '1,3,5'")
+        sys.exit(1)
 
     source_pdf  = Path(args.source_pdf)
     pdf_filename = source_pdf.name
@@ -412,18 +439,19 @@ Examples:
     if args.terms:
         # Non-interactive: terms passed directly on the command line
         term_list = [t.strip() for t in args.terms.split(",") if t.strip()]
-        print(f"Using {len(term_list)} terms from --terms flag")
-        tags = make_dynamic_tags(pdf_filename, term_list, page=args.page)
+        print(f"Using {len(term_list)} term(s) across {len(pages)} page(s) = {len(term_list) * len(pages)} tags")
+        tags = make_dynamic_tags(pdf_filename, term_list, pages=pages)
 
     elif source_pdf.exists():
         # Interactive: read the PDF and let the user pick
+        # Use first page in the range for candidate extraction
         print(f"Reading PDF: {source_pdf}")
-        candidates = extract_pdf_candidates(source_pdf, page=args.page)
+        candidates = extract_pdf_candidates(source_pdf, page=pages[0])
 
         if candidates:
             selected = pick_terms_interactively(candidates)
             if selected:
-                tags = make_dynamic_tags(pdf_filename, selected, page=args.page)
+                tags = make_dynamic_tags(pdf_filename, selected, pages=pages)
             else:
                 print("No terms selected — using placeholder tags")
         else:
